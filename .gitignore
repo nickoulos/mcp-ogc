@@ -16,3 +16,7 @@ wheels/
 
 # Jupyter (later)
 .ipynb_checkpoints/
+
+# Local verification scratch output
+test_map.png
+*.scratch.png
