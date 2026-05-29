@@ -28,12 +28,12 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 
 ## Current status
 
-**As of 2026-05-29: Day 1 complete.** Repo is **LOCAL ONLY** — not yet on GitHub.
+**As of 2026-05-29: Days 1–2 complete.** Repo is **LOCAL ONLY** — not yet on GitHub.
 
 | Day | Scope | Status |
 |---|---|---|
 | 1 | Scaffold + `list_wms_layers` (WMS layer discovery) | ✅ done, verified live |
-| 2 | `get_wms_map` (fetch map image) + FastMCP `server.py` wiring | ⬜ not started |
+| 2 | `get_wms_map` (fetch map image) + FastMCP `server.py` wiring | ✅ done, verified live |
 | 3 | `query_wfs_features` (vector features) + pytest tests + GitHub Actions CI | ⬜ not started |
 | 4 | Demo notebook + proper README + `docs/ARCHITECTURE.md` + tag `v0.1.0` | ⬜ not started |
 | 5 | GitHub publish + polish/visibility (topics, issues, links) | ⬜ not started |
@@ -41,6 +41,13 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 ### What works right now
 - `list_wms_layers(wms_url) -> list[LayerInfo]` — verified live against TopPlusOpen WMS
   (returned 6 layers, all `LayerInfo` fields populated correctly).
+- `get_wms_map(wms_url, layer, bbox, crs, ...) -> bytes` — verified live (fetched a 412 KB
+  valid PNG from TopPlusOpen). Maps the public `crs` arg to owslib's `srs`.
+- `server.py` runs a FastMCP server named `mcp-ogc` exposing **both** WMS tools. Verified that
+  `list_tools()` returns `['list_wms_layers', 'get_wms_map']`. The `get_wms_map` MCP tool wraps
+  the core bytes in a FastMCP `Image` so clients render the map; the core function stays pure bytes.
+- `mcp-ogc` console script is installed (`.venv/Scripts/mcp-ogc.exe`) → runs `mcp_ogc.server:main`.
+- `examples/claude_desktop.json` provides a drop-in Claude Desktop config.
 - Project installs cleanly via `uv` on Python 3.12.
 
 ---
@@ -54,7 +61,9 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 | Python version | pinned **3.12** (`.python-version`) | owslib has a documented quirk on 3.13 |
 | Scope per session | one "day" at a time, clean increments | User wants slow-and-steady, no overcomplication |
 | Publishing | local-only until code is seen working AND user approves | Nothing public prematurely |
-| `[project.scripts]` | **intentionally omitted in Day 1** | Console script targets `server.py` (Day 2); declaring it now = broken `mcp-ogc` command |
+| `[project.scripts]` | added in Day 2 (`mcp-ogc = "mcp_ogc.server:main"`) | Was deferred in Day 1 until `server.py` existed, to avoid a broken command |
+| `get_wms_map` return type | core fn returns `bytes`; `server.py` wraps in FastMCP `Image` | Keeps the core pure/testable/reusable while clients still render the map |
+| `crs` vs `srs` | public tools use `crs`; mapped to owslib's `srs` inside `get_wms_map` | owslib's `getmap()` names the param `srs` even for WMS 1.3.0 |
 | Tests | none yet — pytest is Day 3 work | Day 1/2 verify manually against live endpoints |
 | Git identity (repo-local) | Nikos Koulos `<nickoulos@gmail.com>` | Must be a Foursight-associated identity, set per-repo |
 
@@ -66,13 +75,26 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 # from the repo root
 uv sync                       # install deps into .venv (Python 3.12)
 
-# verify the one working tool against a live WMS:
+# verify layer discovery against a live WMS:
 uv run python -c "from mcp_ogc.tools.wms import list_wms_layers; \
 ls = list_wms_layers('https://sgx.geodatenzentrum.de/wms_topplus_open'); \
 print(len(ls)); print(ls[0].model_dump_json(indent=2) if ls else 'NO LAYERS')"
+
+# verify map fetch (saves test_map.png, which is gitignored):
+uv run python -c "from mcp_ogc.tools.wms import get_wms_map; \
+img = get_wms_map('https://sgx.geodatenzentrum.de/wms_topplus_open', 'web', \
+(10.0, 50.0, 11.0, 51.0), crs='EPSG:4326', width=400, height=400); \
+print('bytes:', len(img), 'PNG' if img[:8]==b'\x89PNG\r\n\x1a\n' else 'NOT PNG')"
+
+# confirm both tools are registered with the MCP server:
+uv run python -c "import asyncio; from mcp_ogc.server import mcp; \
+print([t.name for t in asyncio.run(mcp.list_tools())])"
+
+# run the actual MCP server (waits silently on stdio for a client; Ctrl+C to stop):
+uv run mcp-ogc
 ```
 
-Expected: a non-zero layer count and a populated `LayerInfo` JSON object.
+Expected: non-zero layer count; `PNG`; `['list_wms_layers', 'get_wms_map']`.
 
 ### ⚠️ Network caveats (important — saves debugging time)
 - **The Claude Code sandbox has NO internet** — DNS fails. Any live WMS/WFS call must be run in
@@ -84,34 +106,29 @@ Expected: a non-zero layer count and a populated `LayerInfo` JSON object.
 
 ---
 
-## What to do next (Day 2)
+## What to do next (Day 3)
 
-**Goal:** add `get_wms_map` and stand up the actual MCP server so an AI client can attach.
+**Goal:** add the third tool (`query_wfs_features`), the first automated tests, and CI.
 
-1. Implement `get_wms_map(wms_url, layer, bbox, crs, width, height, image_format, time) -> bytes`
-   in `src/mcp_ogc/tools/wms.py`, using `owslib`'s `wms.getmap(...)`.
-   - **GOTCHA:** owslib's `getmap()` takes `srs=` (not `crs=`). The public tool signature uses
-     `crs` (per the briefs), so map `crs` → owslib's `srs` inside the function.
-   - Return `img.read()` (raw image bytes).
-2. Create `src/mcp_ogc/server.py` with FastMCP and register the tools:
-   ```python
-   from mcp.server.fastmcp import FastMCP
-   from mcp_ogc.tools.wms import list_wms_layers, get_wms_map
-   mcp = FastMCP("mcp-ogc")
-   mcp.tool()(list_wms_layers)
-   mcp.tool()(get_wms_map)
-   def main(): mcp.run()
-   if __name__ == "__main__": main()
-   ```
-3. **Now** add the console script to `pyproject.toml` (it was deliberately deferred):
-   ```toml
-   [project.scripts]
-   mcp-ogc = "mcp_ogc.server:main"
-   ```
-4. Add `examples/claude_desktop.json` sample config.
-5. Verify the server starts and a client can call both tools.
+1. Implement `query_wfs_features(wfs_url, type_name, bbox=None, filter_cql=None, max_features=100) -> dict`
+   in a new `src/mcp_ogc/tools/wfs.py`, using `owslib.wfs.WebFeatureService(wfs_url, version="2.0.0")`.
+   - Call `wfs.getfeature(typename=type_name, bbox=bbox, ...)` requesting `outputFormat="application/json"`.
+   - Parse the response as JSON and return a GeoJSON FeatureCollection dict.
+   - **Likely GOTCHAs (verify against current owslib):** WFS 2.0.0 param naming
+     (`typename` vs `typenames`), how `maxfeatures`/`count` is spelled, and how CQL filters are passed.
+     Check owslib docs before assuming the brief's signature maps 1:1.
+2. Register it in `server.py` (add an `@mcp.tool()` for `query_wfs_features`, same pattern as the
+   WMS tools). It returns a plain dict, so no `Image` wrapper needed.
+3. Add `tests/` with pytest + `pytest-httpx` (add them as dev deps via `uv add --dev`):
+   - Mock the HTTP responses (GetCapabilities, GetMap, GetFeature) — do NOT hit live endpoints in CI.
+   - `tests/test_wms.py` (4–6 tests), `tests/test_wfs.py` (3–4 tests).
+4. Add `ruff` as a dev dep; ensure `ruff check` passes.
+5. Add `.github/workflows/ci.yml`: on push, `uv sync`, `uv run pytest`, `uv run ruff check`.
+6. **Network note:** CI must use mocks (GitHub runners can reach the internet, but live WMS calls
+   are flaky and slow — keep tests hermetic). The live endpoint checks stay manual / local.
 
-After Day 2, see the day-by-day plan for Days 3–5.
+After Day 3: Day 4 = demo notebook + proper README + `docs/ARCHITECTURE.md` + tag `v0.1.0`;
+Day 5 = GitHub publish + visibility. See the briefs for detail.
 
 ---
 
