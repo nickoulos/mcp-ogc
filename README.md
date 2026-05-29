@@ -43,7 +43,7 @@ flowchart LR
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/foursight-lab/mcp-ogc
+git clone https://github.com/nickoulos/mcp-ogc
 cd mcp-ogc
 uv sync
 uv run mcp-ogc

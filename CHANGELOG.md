@@ -26,4 +26,4 @@ Initial release. An MCP server exposing OGC WMS and WFS services as LLM-callable
   supported. See the roadmap.
 - Requires Python 3.12+.
 
-[0.1.0]: https://github.com/foursight-lab/mcp-ogc/releases/tag/v0.1.0
+[0.1.0]: https://github.com/nickoulos/mcp-ogc/releases/tag/v0.1.0
