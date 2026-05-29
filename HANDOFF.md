@@ -28,15 +28,21 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 
 ## Current status
 
-**As of 2026-05-29: Days 1–3 complete.** Repo is **LOCAL ONLY** — not yet on GitHub.
+**As of 2026-05-29: Days 1–4 complete.** Repo is **LOCAL ONLY** — not yet on GitHub. Tagged `v0.1.0`.
 
 | Day | Scope | Status |
 |---|---|---|
 | 1 | Scaffold + `list_wms_layers` (WMS layer discovery) | ✅ done, verified live |
 | 2 | `get_wms_map` (fetch map image) + FastMCP `server.py` wiring | ✅ done, verified live |
 | 3 | `query_wfs_features` (vector features) + pytest tests + GitHub Actions CI | ✅ done (8 tests green, ruff clean) |
-| 4 | Demo notebook + proper README + `docs/ARCHITECTURE.md` + tag `v0.1.0` | ⬜ not started |
+| 4 | Demo notebook + proper README + `docs/ARCHITECTURE.md` + CHANGELOG + tag `v0.1.0` | ✅ done (tag local) |
 | 5 | GitHub publish + polish/visibility (topics, issues, links) | ⬜ not started |
+
+> **⚠️ Unverified before release:** `examples/demo.ipynb`'s **WFS cell** uses a PDOK endpoint +
+> `type_name` (`bestuurlijkegebieden:Gemeentegebied`) that was NOT run live (sandbox has no
+> internet). The WMS cells use endpoints we proved live. **Run the notebook end-to-end (or just the
+> WFS cell) before the Day 5 GitHub release**; fix the endpoint/type_name if needed, then re-point
+> the `v0.1.0` tag (`git tag -f -a v0.1.0`) before pushing.
 
 ### What works right now
 - `list_wms_layers(wms_url) -> list[LayerInfo]` — verified live against TopPlusOpen WMS
@@ -54,6 +60,11 @@ not application theater) and be **genuinely useful to others**, not just Sundsva
 - `examples/claude_desktop.json` provides a drop-in Claude Desktop config.
 - **Test suite:** 8 hermetic tests (`tests/test_wms.py`, `tests/test_wfs.py`) — all green, no
   network. **CI:** `.github/workflows/ci.yml` runs `uv sync` + `ruff check` + `pytest` on push/PR.
+- **Docs:** full `README.md` (with Mermaid architecture diagram + roadmap), `docs/ARCHITECTURE.md`,
+  `CHANGELOG.md` (v0.1.0), and `examples/demo.ipynb` (3-tool walkthrough, no API key). `ruff` lints
+  the notebook too — keep its cells clean.
+- **Tag:** `v0.1.0` exists locally (annotated). NOT pushed. May need re-pointing if the demo WFS
+  cell is fixed (see warning above).
 - Project installs cleanly via `uv` on Python 3.12.
 
 ---
@@ -118,26 +129,32 @@ Expected: non-zero layer count; `PNG`;
 
 ---
 
-## What to do next (Day 4)
+## What to do next (Day 5 — PUBLISH)
 
-**Goal:** make the repo findable/understandable/runnable, then tag `v0.1.0` (still local until Day 5 publish).
+**Goal:** make the repo public on GitHub under the `foursight-lab` org and publish the `v0.1.0`
+release. **This is the first outward-facing step — confirm with the user before pushing anything.**
 
-1. **Proper `README.md`** (replace the placeholder). Use the template in the briefs (§5): one-line
-   what-it-does, the three tools, why, quick start (`uv sync` / `mcp-ogc`), the Claude Desktop config
-   snippet, the Mermaid architecture diagram (brief §7), license, and a roadmap that lists
-   **WFS attribute/CQL filtering** and **WMTS/auth** as v0.2 items.
-2. **`docs/ARCHITECTURE.md`** — ~1 page: why MCP, why OGC, the "core returns plain data / server
-   wraps for MCP" split, why owslib, why bbox-only WFS in v0.1.0.
-3. **`examples/demo.ipynb`** — a Jupyter notebook walking through all three tools against a live
-   endpoint. ⚠️ Use a **reachable** endpoint for any executed cells (TopPlusOpen works; Swedish
-   hosts may not resolve here). Optional: a small `anthropic`-SDK agentic loop.
-4. **`CHANGELOG.md`** — a `v0.1.0` entry summarizing the three tools.
-5. **Tag `v0.1.0`** locally (`git tag -a v0.1.0 -m "..."`). The GitHub release itself is Day 5.
-6. Sanity: fresh `uv sync` → `pytest` → notebook runs top-to-bottom without manual fixes.
+**Before pushing (do these first):**
+0. **Verify the demo notebook end-to-end** in the user's terminal (the WFS cell is unverified —
+   see the warning near the top). Fix the WFS endpoint/`type_name` if needed and re-point the tag:
+   `git add examples/demo.ipynb && git commit --amend` (or a new commit) then
+   `git tag -f -a v0.1.0 -m "..."`.
 
-After Day 4: Day 5 = create the `foursight-lab` GitHub org + public repo, push, publish the
-`v0.1.0` release, add topics/description, file v0.2 roadmap issues, cross-link from the website.
-**Publishing is the first outward-facing step — confirm with the user before pushing anything.**
+**Publish steps:**
+1. `gh auth login` (currently not authenticated).
+2. Create the `foursight-lab` GitHub org (manual, via GitHub UI) if it doesn't exist.
+3. Create the public repo and push: `gh repo create foursight-lab/mcp-ogc --public --source=. --push`,
+   then `git push --tags`.
+4. Confirm the **CI badge goes green** on GitHub (CI has only been proven locally so far).
+   Add the badge to the README once green.
+5. Publish the `v0.1.0` **release** from the tag (`gh release create v0.1.0 ...`).
+6. Add repo **description + topics**: `mcp`, `wms`, `wfs`, `ogc`, `geospatial`, `agpl-3.0`,
+   `llm-tools`.
+7. File 3–5 **v0.2 roadmap issues** (CQL filtering, WMTS, auth, caching) — shows planning.
+8. Cross-link from foursightlab.com / LinkedIn.
+
+After publishing: add one sentence to the procurement application
+(`Org_och_kapacitet_Foursight_Lab.md`) referencing the public repo. See briefs §6/§10.
 
 ---
 
