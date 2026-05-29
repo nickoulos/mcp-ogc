@@ -7,9 +7,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 from __future__ import annotations
 
+from typing import Any
+
 from mcp.server.fastmcp import FastMCP, Image
 
 from mcp_ogc.models import LayerInfo
+from mcp_ogc.tools.wfs import query_wfs_features as _query_wfs_features
 from mcp_ogc.tools.wms import get_wms_map as _get_wms_map
 from mcp_ogc.tools.wms import list_wms_layers as _list_wms_layers
 
@@ -68,6 +71,32 @@ def get_wms_map(
     # image_format is a MIME type like "image/png"; FastMCP wants the subtype.
     subtype = image_format.split("/")[-1] if "/" in image_format else image_format
     return Image(data=data, format=subtype)
+
+
+@mcp.tool()
+def query_wfs_features(
+    wfs_url: str,
+    type_name: str,
+    bbox: tuple[float, float, float, float] | None = None,
+    max_features: int = 100,
+) -> dict[str, Any]:
+    """Query vector features from a WFS endpoint as GeoJSON.
+
+    Args:
+        wfs_url: Base URL of the WFS service.
+        type_name: Feature type to query (from the service's capabilities).
+        bbox: Optional bounding box filter (minx, miny, maxx, maxy).
+        max_features: Maximum number of features to return.
+
+    Returns:
+        A GeoJSON FeatureCollection as a dict.
+    """
+    return _query_wfs_features(
+        wfs_url=wfs_url,
+        type_name=type_name,
+        bbox=bbox,
+        max_features=max_features,
+    )
 
 
 def main() -> None:
