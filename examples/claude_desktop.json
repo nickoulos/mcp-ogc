@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "ogc": {
+      "command": "mcp-ogc"
+    }
+  }
+}

@@ -53,3 +53,48 @@ def list_wms_layers(wms_url: str) -> list[LayerInfo]:
         )
 
     return layers
+
+
+def get_wms_map(
+    wms_url: str,
+    layer: str,
+    bbox: tuple[float, float, float, float],
+    crs: str = "EPSG:3857",
+    width: int = 800,
+    height: int = 600,
+    image_format: str = "image/png",
+    time: str | None = None,
+) -> bytes:
+    """Fetch a rendered map image from a WMS endpoint.
+
+    Args:
+        wms_url: Base URL of the WMS service.
+        layer: Layer name (as returned by list_wms_layers).
+        bbox: (minx, miny, maxx, maxy) in the requested CRS.
+        crs: Coordinate reference system (default Web Mercator, EPSG:3857).
+        width: Output image width in pixels.
+        height: Output image height in pixels.
+        image_format: MIME type of the image (default "image/png").
+        time: Optional ISO 8601 time value for time-aware layers
+            (e.g. historical orthophoto archives).
+
+    Returns:
+        Raw image bytes (PNG by default).
+    """
+    wms = WebMapService(wms_url, version="1.3.0")
+
+    # owslib's getmap() names the coordinate system parameter `srs`, even for
+    # WMS 1.3.0 where the protocol calls it CRS. We expose `crs` publicly and
+    # translate here.
+    getmap_kwargs: dict = {
+        "layers": [layer],
+        "srs": crs,
+        "bbox": bbox,
+        "size": (width, height),
+        "format": image_format,
+    }
+    if time is not None:
+        getmap_kwargs["time"] = time
+
+    response = wms.getmap(**getmap_kwargs)
+    return response.read()

@@ -13,9 +13,8 @@ dependencies = [
     "httpx>=0.27",
 ]
 
-# NOTE: no [project.scripts] yet. The `mcp-ogc` console script will target
-# mcp_ogc.server:main, which lands on Day 2. Declaring it now would create a
-# broken command on install.
+[project.scripts]
+mcp-ogc = "mcp_ogc.server:main"
 
 [build-system]
 requires = ["uv_build>=0.9.25,<0.10.0"]
