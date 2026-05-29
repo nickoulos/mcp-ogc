@@ -1,0 +1,22 @@
+[project]
+name = "mcp-ogc"
+version = "0.1.0"
+description = "Expose OGC WMS and WFS geospatial services as Model Context Protocol tools."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "Foursight Lab" }]
+dependencies = [
+    "mcp>=1.2",
+    "owslib>=0.31",
+    "pydantic>=2",
+    "httpx>=0.27",
+]
+
+# NOTE: no [project.scripts] yet. The `mcp-ogc` console script will target
+# mcp_ogc.server:main, which lands on Day 2. Declaring it now would create a
+# broken command on install.
+
+[build-system]
+requires = ["uv_build>=0.9.25,<0.10.0"]
+build-backend = "uv_build"
