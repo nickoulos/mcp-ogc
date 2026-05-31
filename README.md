@@ -1,5 +1,9 @@
 # mcp-ogc
 
+[![CI](https://github.com/nickoulos/mcp-ogc/actions/workflows/ci.yml/badge.svg)](https://github.com/nickoulos/mcp-ogc/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+
 Expose OGC **WMS** and **WFS** geospatial services as [Model Context Protocol](https://modelcontextprotocol.io)
 tools, so LLM agents can discover layers, render maps, and query vector features from any
 standards-compliant geodata server.
