@@ -10,6 +10,8 @@ from typing import Any
 
 from owslib.wfs import WebFeatureService
 
+from mcp_ogc.errors import OGCError, wrap_connection_errors
+
 
 def query_wfs_features(
     wfs_url: str,
@@ -30,17 +32,29 @@ def query_wfs_features(
     Returns:
         A GeoJSON FeatureCollection as a dict.
 
+    Raises:
+        OGCError: if the endpoint cannot be reached or `type_name` is not one of
+            the feature types the service advertises.
+
     Note:
         Attribute filtering (e.g. CQL) is intentionally out of scope for
         v0.1.0; see the roadmap. Only spatial (bbox) filtering is supported here.
     """
-    wfs = WebFeatureService(wfs_url, version="2.0.0")
+    with wrap_connection_errors(wfs_url):
+        wfs = WebFeatureService(wfs_url, version="2.0.0")
 
-    response = wfs.getfeature(
-        typename=[type_name],
-        bbox=bbox,
-        maxfeatures=max_features,
-        outputFormat="application/json",
-    )
+        if type_name not in wfs.contents:
+            available = ", ".join(sorted(wfs.contents)) or "(none advertised)"
+            raise OGCError(
+                f"Unknown WFS feature type {type_name!r}. "
+                f"Available feature types: {available}"
+            )
+
+        response = wfs.getfeature(
+            typename=[type_name],
+            bbox=bbox,
+            maxfeatures=max_features,
+            outputFormat="application/json",
+        )
 
     return json.loads(response.read())

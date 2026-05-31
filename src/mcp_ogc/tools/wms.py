@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from owslib.wms import WebMapService
 
+from mcp_ogc.errors import OGCError, wrap_connection_errors
 from mcp_ogc.models import LayerInfo
 
 
@@ -20,8 +21,12 @@ def list_wms_layers(wms_url: str) -> list[LayerInfo]:
 
     Returns:
         One LayerInfo per named layer advertised by the service.
+
+    Raises:
+        OGCError: if the endpoint cannot be reached.
     """
-    wms = WebMapService(wms_url, version="1.3.0")
+    with wrap_connection_errors(wms_url):
+        wms = WebMapService(wms_url, version="1.3.0")
 
     layers: list[LayerInfo] = []
     for key in wms.contents:
@@ -80,21 +85,32 @@ def get_wms_map(
 
     Returns:
         Raw image bytes (PNG by default).
+
+    Raises:
+        OGCError: if the endpoint cannot be reached or `layer` is not one of the
+            layers the service advertises.
     """
-    wms = WebMapService(wms_url, version="1.3.0")
+    with wrap_connection_errors(wms_url):
+        wms = WebMapService(wms_url, version="1.3.0")
 
-    # owslib's getmap() names the coordinate system parameter `srs`, even for
-    # WMS 1.3.0 where the protocol calls it CRS. We expose `crs` publicly and
-    # translate here.
-    getmap_kwargs: dict = {
-        "layers": [layer],
-        "srs": crs,
-        "bbox": bbox,
-        "size": (width, height),
-        "format": image_format,
-    }
-    if time is not None:
-        getmap_kwargs["time"] = time
+        if layer not in wms.contents:
+            available = ", ".join(sorted(wms.contents)) or "(none advertised)"
+            raise OGCError(
+                f"Unknown WMS layer {layer!r}. Available layers: {available}"
+            )
 
-    response = wms.getmap(**getmap_kwargs)
-    return response.read()
+        # owslib's getmap() names the coordinate system parameter `srs`, even
+        # for WMS 1.3.0 where the protocol calls it CRS. We expose `crs`
+        # publicly and translate here.
+        getmap_kwargs: dict = {
+            "layers": [layer],
+            "srs": crs,
+            "bbox": bbox,
+            "size": (width, height),
+            "format": image_format,
+        }
+        if time is not None:
+            getmap_kwargs["time"] = time
+
+        response = wms.getmap(**getmap_kwargs)
+        return response.read()
