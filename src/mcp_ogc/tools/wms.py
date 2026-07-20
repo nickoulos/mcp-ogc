@@ -75,7 +75,12 @@ def get_wms_map(
     Args:
         wms_url: Base URL of the WMS service.
         layer: Layer name (as returned by list_wms_layers).
-        bbox: (minx, miny, maxx, maxy) in the requested CRS.
+        bbox: (minx, miny, maxx, maxy) in the requested CRS — ALWAYS
+            easting-first, even for northing-first CRS like EPSG:3006.
+            WMS 1.3.0 requires such CRS to be sent northing-first on the
+            wire; owslib performs that swap internally, and a wrong order
+            fails silently (HTTP 200, near-blank image), so do NOT pre-swap.
+            Locked by test_get_wms_map_epsg3006_sends_bbox_northing_first.
         crs: Coordinate reference system (default Web Mercator, EPSG:3857).
         width: Output image width in pixels.
         height: Output image height in pixels.

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Regression test pinning the WMS 1.3.0 axis-order contract for northing-first
+  CRS (EPSG:3006 / SWEREF99 TM): `get_wms_map` takes bbox easting-first for
+  every CRS and owslib swaps to northing-first on the wire. A wrong order fails
+  silently (HTTP 200, near-blank image), so the on-wire order is now asserted
+  in tests and documented in the `get_wms_map` docstring and ARCHITECTURE.md.
+  Verified live against karta.sundsvall.se (365 KB imagery vs 5.6 KB blank).
+
 ## [0.1.1] - 2026-05-31
 
 ### Added
