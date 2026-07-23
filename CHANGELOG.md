@@ -15,6 +15,20 @@ All notable changes to this project are documented here. The format is based on
   in tests and documented in the `get_wms_map` docstring and ARCHITECTURE.md.
   Verified live against karta.sundsvall.se (365 KB imagery vs 5.6 KB blank).
 
+## [0.2.0] - 2026-07-23
+
+### Added
+
+- Streamable HTTP transport mode, so `mcp-ogc` can be consumed by MCP clients
+  that require it (e.g. Eneo) instead of stdio. `mcp-ogc --transport
+  streamable-http --host 0.0.0.0 --port 8000` serves over HTTP; the console
+  script defaults to `--transport stdio` unchanged, so existing stdio
+  consumers are unaffected.
+- `TransportSecuritySettings` on the FastMCP instance (DNS-rebinding
+  protection with an allowlist covering `127.0.0.1`, `localhost`, `[::1]`, and
+  `host.docker.internal`), so the server is reachable from clients running in
+  Docker. This only gates the HTTP transport and has no effect on stdio.
+
 ## [0.1.1] - 2026-05-31
 
 ### Added
@@ -47,5 +61,6 @@ Initial release. An MCP server exposing OGC WMS and WFS services as LLM-callable
   supported. See the roadmap.
 - Requires Python 3.12+.
 
+[0.2.0]: https://github.com/nickoulos/mcp-ogc/releases/tag/v0.2.0
 [0.1.1]: https://github.com/nickoulos/mcp-ogc/releases/tag/v0.1.1
 [0.1.0]: https://github.com/nickoulos/mcp-ogc/releases/tag/v0.1.0

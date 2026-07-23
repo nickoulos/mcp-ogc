@@ -69,6 +69,18 @@ To attach to Claude Desktop, add this to your `claude_desktop_config.json`
 See [`examples/demo.ipynb`](examples/demo.ipynb) for a full walkthrough of the three tools against
 a live public WMS/WFS.
 
+### Streamable HTTP
+
+`mcp-ogc` defaults to stdio, but MCP clients that require Streamable HTTP (e.g. Eneo) can run it
+as an HTTP server instead:
+
+```bash
+uv run mcp-ogc --transport streamable-http --host 0.0.0.0 --port 8000
+```
+
+DNS-rebinding protection is enabled on the HTTP transport, with an allowlist covering
+`127.0.0.1`, `localhost`, `[::1]`, and `host.docker.internal` (for clients running in Docker).
+
 ## Development
 
 ```bash

@@ -7,16 +7,34 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 from __future__ import annotations
 
+import argparse
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP, Image
+from mcp.server.transport_security import TransportSecuritySettings
 
 from mcp_ogc.models import LayerInfo
 from mcp_ogc.tools.wfs import query_wfs_features as _query_wfs_features
 from mcp_ogc.tools.wms import get_wms_map as _get_wms_map
 from mcp_ogc.tools.wms import list_wms_layers as _list_wms_layers
 
-mcp = FastMCP("mcp-ogc")
+# Streamable-HTTP clients (e.g. Eneo) may run in Docker and reach this server
+# via host.docker.internal; FastMCP's default DNS-rebinding allowlist is
+# localhost-only and answers such requests with 421 Misdirected Request. Keep
+# the protection, widen the allowlist. This has no effect on stdio mode.
+mcp = FastMCP(
+    "mcp-ogc",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*", "host.docker.internal:*"],
+        allowed_origins=[
+            "http://127.0.0.1:*",
+            "http://localhost:*",
+            "http://[::1]:*",
+            "http://host.docker.internal:*",
+        ],
+    ),
+)
 
 
 @mcp.tool()
@@ -99,9 +117,36 @@ def query_wfs_features(
     )
 
 
-def main() -> None:
-    """Console-script entry point: run the MCP server over stdio."""
-    mcp.run()
+def main(argv: list[str] | None = None) -> None:
+    """Console-script entry point: run the MCP server.
+
+    Defaults to stdio (unchanged behavior for existing consumers). Pass
+    ``--transport streamable-http`` to serve over Streamable HTTP instead,
+    e.g. for clients such as Eneo that require it.
+    """
+    parser = argparse.ArgumentParser(
+        prog="mcp-ogc",
+        description="mcp-ogc MCP server.",
+    )
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "streamable-http"],
+        default="stdio",
+        help="Transport to serve over (default: stdio).",
+    )
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Host to bind (streamable-http only)."
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port to bind (streamable-http only)."
+    )
+    args = parser.parse_args(argv)
+
+    if args.host is not None:
+        mcp.settings.host = args.host
+    if args.port is not None:
+        mcp.settings.port = args.port
+    mcp.run(transport=args.transport)
 
 
 if __name__ == "__main__":
