@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-23
+
 ### Added
 
 - Regression test pinning the WMS 1.3.0 axis-order contract for northing-first
@@ -14,10 +16,6 @@ All notable changes to this project are documented here. The format is based on
   silently (HTTP 200, near-blank image), so the on-wire order is now asserted
   in tests and documented in the `get_wms_map` docstring and ARCHITECTURE.md.
   Verified live against karta.sundsvall.se (365 KB imagery vs 5.6 KB blank).
-
-## [0.2.0] - 2026-07-23
-
-### Added
 
 - Streamable HTTP transport mode, so `mcp-ogc` can be consumed by MCP clients
   that require it (e.g. Eneo) instead of stdio. `mcp-ogc --transport
