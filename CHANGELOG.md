@@ -40,6 +40,9 @@ All notable changes to this project are documented here. The format is based on
 
 ### Security
 
+- Server error text is truncated *before* tags are stripped. A hostile or broken server body
+  with many unclosed `<` made the tag-stripping regex quadratic (about 107 s for 400 KB); it is
+  now bounded and the pattern can't scan past the next `<`. The flaw never shipped in a release.
 - Credentials are now bound to each outgoing request's host, not to the owslib client. Before,
   a capabilities document that advertised a GetMap/GetFeature URL on another host (or a plain
   http variant of the same host) received the configured credentials. The host is now parsed

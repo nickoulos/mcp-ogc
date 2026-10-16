@@ -59,7 +59,10 @@ def service_text(exc: Exception | str, limit: int = 300) -> str:
     the raw response body (often an XML exception report). Tags are stripped
     with a regex rather than an XML parser, so untrusted XML is never parsed.
     """
-    text = re.sub(r"<[^>]*>", " ", str(exc))
+    # Bound the input first: the body comes from the server, and stripping tags
+    # from huge unclosed markup ("<<<<...") would otherwise take quadratic time.
+    text = str(exc)[: limit * 20]
+    text = re.sub(r"<[^<>]*>", " ", text)
     # Unescape after stripping tags, so escaped "&lt;...&gt;" text survives.
     # Some servers (GeoServer CQL errors) escape twice.
     for _ in range(3):
