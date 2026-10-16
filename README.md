@@ -106,6 +106,19 @@ tool arguments, so the LLM never sees them. HTTP Basic (`username` + `password`)
   override that for a trusted internal endpoint.
 - Credentials are never logged, persisted, or echoed in error messages.
 
+### Caching and retries
+
+Both are opt-in, via environment variables, so the default stays simple (no cache, no retries):
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `MCP_OGC_CACHE_TTL` | `0` (off) | Seconds to keep parsed GetCapabilities documents in memory, so repeated tool calls on one endpoint don't refetch them. |
+| `MCP_OGC_RETRIES` | `0` | Retries for transient failures: connection errors, timeouts, HTTP 5xx. Client errors (4xx) are never retried. |
+| `MCP_OGC_RETRY_BACKOFF` | `0.5` | Base delay in seconds; retry *n* waits `base * 2**n` (0.5 s, 1 s, 2 s, ...). |
+
+The cache holds at most 64 endpoints (least recently used evicted) and is keyed by endpoint and
+auth configuration, so different credentials never share an entry.
+
 ## Development
 
 ```bash

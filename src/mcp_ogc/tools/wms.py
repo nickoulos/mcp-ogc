@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from mcp_ogc.errors import OGCError, wrap_connection_errors
 from mcp_ogc.models import LayerInfo
-from mcp_ogc.services import open_wms
+from mcp_ogc.services import call_with_retry, open_wms
 
 
 def list_wms_layers(wms_url: str) -> list[LayerInfo]:
@@ -116,5 +116,5 @@ def get_wms_map(
         if time is not None:
             getmap_kwargs["time"] = time
 
-        response = wms.getmap(**getmap_kwargs)
+        response = call_with_retry(lambda: wms.getmap(**getmap_kwargs))
         return response.read()

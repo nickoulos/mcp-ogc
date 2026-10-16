@@ -9,7 +9,7 @@ import json
 from typing import Any
 
 from mcp_ogc.errors import OGCError, wrap_connection_errors
-from mcp_ogc.services import open_wfs
+from mcp_ogc.services import call_with_retry, open_wfs
 
 
 def query_wfs_features(
@@ -49,11 +49,13 @@ def query_wfs_features(
                 f"Available feature types: {available}"
             )
 
-        response = wfs.getfeature(
-            typename=[type_name],
-            bbox=bbox,
-            maxfeatures=max_features,
-            outputFormat="application/json",
+        response = call_with_retry(
+            lambda: wfs.getfeature(
+                typename=[type_name],
+                bbox=bbox,
+                maxfeatures=max_features,
+                outputFormat="application/json",
+            )
         )
 
     return json.loads(response.read())

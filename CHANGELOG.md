@@ -15,6 +15,11 @@ All notable changes to this project are documented here. The format is based on
   logged or echoed in errors.
 - When a service rejects a request (HTTP 400/401/403), tools now raise an `OGCError` naming the
   endpoint and hinting at `MCP_OGC_AUTH`, instead of a raw owslib `ServiceException`.
+- Opt-in capabilities cache and retry/backoff (#4). `MCP_OGC_CACHE_TTL` keeps parsed
+  GetCapabilities documents in memory (bounded LRU, keyed by endpoint and auth config).
+  `MCP_OGC_RETRIES` / `MCP_OGC_RETRY_BACKOFF` retry connection errors, timeouts and HTTP 5xx with
+  exponential backoff, for both capabilities and data requests; 4xx is never retried. Both are
+  off by default.
 
 ### Security
 
