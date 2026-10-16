@@ -6,6 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 """
 
 import re
+import time
 
 import pytest
 import responses
@@ -74,3 +75,14 @@ def test_service_text_strips_tags_and_unescapes_entities():
     )
 
     assert service_text(body) == 'Encountered " <EQ> "== "" at line 1'
+
+
+def test_service_text_is_fast_on_huge_unclosed_markup():
+    # A hostile or broken server body: many "<" and no ">". Stripping tags over the
+    # whole body is quadratic; the input must be bounded before any processing.
+    body = "<" * 400_000
+
+    start = time.perf_counter()
+    service_text(body)
+
+    assert time.perf_counter() - start < 1.0
