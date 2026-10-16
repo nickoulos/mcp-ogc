@@ -13,7 +13,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP, Image
 from mcp.server.transport_security import TransportSecuritySettings
 
-from mcp_ogc.models import LayerInfo, WMTSLayerInfo
+from mcp_ogc.models import AttributeFilter, LayerInfo, WMTSLayerInfo
 from mcp_ogc.tools.wfs import query_wfs_features as _query_wfs_features
 from mcp_ogc.tools.wms import get_wms_map as _get_wms_map
 from mcp_ogc.tools.wms import list_wms_layers as _list_wms_layers
@@ -99,14 +99,22 @@ def query_wfs_features(
     type_name: str,
     bbox: tuple[float, float, float, float] | None = None,
     max_features: int = 100,
+    filters: list[AttributeFilter] | None = None,
+    cql_filter: str | None = None,
 ) -> dict[str, Any]:
     """Query vector features from a WFS endpoint as GeoJSON.
 
     Args:
         wfs_url: Base URL of the WFS service.
         type_name: Feature type to query (from the service's capabilities).
-        bbox: Optional bounding box filter (minx, miny, maxx, maxy).
+        bbox: Optional bounding box filter (minx, miny, maxx, maxy), easting-first.
         max_features: Maximum number of features to return.
+        filters: Optional attribute conditions, e.g.
+            [{"property": "type", "op": "=", "value": "school"}], AND-ed together.
+            Works on any WFS 2.0 server; can be combined with bbox. Preferred.
+        cql_filter: Optional raw CQL, e.g. "type = 'school' AND floors > 2".
+            GeoServer only (other servers may silently ignore it); cannot be
+            combined with filters or bbox.
 
     Returns:
         A GeoJSON FeatureCollection as a dict.
@@ -116,6 +124,8 @@ def query_wfs_features(
         type_name=type_name,
         bbox=bbox,
         max_features=max_features,
+        filters=filters,
+        cql_filter=cql_filter,
     )
 
 

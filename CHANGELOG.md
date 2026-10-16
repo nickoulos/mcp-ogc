@@ -28,6 +28,16 @@ All notable changes to this project are documented here. The format is based on
   CRS. The tool returns the tile image plus its resolved row/column. Verified live against
   TopPlusOpen (EPSG:3857 and EPSG:25832).
 
+- WFS attribute filtering (#1). `query_wfs_features` accepts `filters`, a list of
+  `{property, op, value}` conditions (`=`, `!=`, `<`, `<=`, `>`, `>=`, `like`, `is_null`) AND-ed
+  into a standard OGC FES 2.0 filter that works on any WFS 2.0 server and combines with `bbox`. It
+  also accepts `cql_filter`, a raw CQL string sent as GeoServer's `CQL_FILTER` vendor parameter
+  (GeoServer only; mutually exclusive with `filters` and `bbox`). Verified live on GeoServer
+  (GeoSolutions, Sundsvall) and MapServer (PDOK).
+- A query the server rejects now produces an `OGCError` quoting the server's message (tags stripped,
+  entities unescaped), and a response that isn't GeoJSON gets a clear error instead of a JSON
+  decode traceback.
+
 ### Security
 
 - Credentials are now bound to each outgoing request's host, not to the owslib client. Before,

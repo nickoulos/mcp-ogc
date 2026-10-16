@@ -8,6 +8,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 from __future__ import annotations
 
+import html
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from urllib.parse import urlsplit
@@ -50,11 +52,29 @@ def wrap_connection_errors(url: str) -> Iterator[None]:
         raise
 
 
+def service_text(exc: Exception | str, limit: int = 300) -> str:
+    """Readable text of an owslib ServiceException (or any error body).
+
+    owslib passes either the extracted exception text or, for HTTP 400/401/403,
+    the raw response body (often an XML exception report). Tags are stripped
+    with a regex rather than an XML parser, so untrusted XML is never parsed.
+    """
+    text = re.sub(r"<[^>]*>", " ", str(exc))
+    # Unescape after stripping tags, so escaped "&lt;...&gt;" text survives.
+    # Some servers (GeoServer CQL errors) escape twice.
+    for _ in range(3):
+        unescaped = html.unescape(text)
+        if unescaped == text:
+            break
+        text = unescaped
+    return " ".join(text.split())[:limit] or "(no details)"
+
+
 def _rejected_message(url: str, exc: Exception) -> str:
     # Imported here: mcp_ogc.auth imports this module.
     from mcp_ogc.auth import AUTH_ENV_VAR, auth_for_url
 
-    detail = " ".join(str(exc).split())[:300] or "(no details)"
+    detail = service_text(exc)
     host = urlsplit(url).hostname or url
     try:
         has_credentials = auth_for_url(url) is not None

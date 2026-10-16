@@ -98,6 +98,26 @@ Annex H (`pixel_span = ScaleDenominator × 0.28 mm / metersPerUnit`). Two traps,
 The core returns a `WMTSTile` (bytes + MIME type + resolved row/column). The MCP tool returns
 both the image and a text line with the location, so an agent can request neighbouring tiles.
 
+## WFS attribute filters
+
+`query_wfs_features` takes structured `filters` (preferred) or a raw `cql_filter`:
+
+- **`filters` → OGC Filter Encoding 2.0.** Built with the standard library's ElementTree and sent as
+  the `FILTER` KVP parameter, so it works on any WFS 2.0 server. We build that request ourselves
+  because owslib's GET `getfeature(filter=...)` sends the filter as `query=`, which servers ignore.
+  WFS forbids `BBOX` together with `FILTER`, so a `bbox` is folded into the filter as an
+  `fes:BBOX` (no `ValueReference` = default geometry), in the feature type's default CRS and
+  axis order, mirroring owslib's own plain-bbox encoding. Verified live: on Sundsvall's GeoServer
+  (EPSG:3006) the filter path and the plain-bbox path return the same 49 features.
+- **`cql_filter` → GeoServer's `CQL_FILTER`.** Passed through verbatim. It can't be detected
+  whether a server honours it: MapServer (e.g. PDOK) silently ignores it and returns unfiltered
+  results, so the docs steer agents to `filters`.
+
+Server rejections arrive as owslib `ServiceException`s (raw XML body for HTTP 400, extracted text
+for an exception report in an HTTP 200). When a filter was used they become an `OGCError` quoting
+the server's message plus a filter hint. Tags are stripped with a regex and entities unescaped, so
+no untrusted XML is parsed by us.
+
 ## Caching and retries
 
 Both live in `services.py` and are off unless their environment variable is set, so the default
@@ -117,7 +137,7 @@ Small and sharp beats big and half-broken. Intentionally **out** of v0.1.0:
 
 - **WFS attribute filtering (CQL).** owslib's `getfeature()` exposes no CQL parameter (only an OGC
   XML filter). Supporting CQL well would mean fragile, vendor-specific request building, so
-  v0.1.0 supports **spatial (bbox) filtering only**; CQL is a v0.2 roadmap item.
+  v0.1.0 supported **spatial (bbox) filtering only**. (Since added; see WFS attribute filters.)
 - **WMTS, WPS, OAuth/SAML auth, caching, retries, exotic CRS reprojection.** All deferred.
   (HTTP Basic and static Bearer tokens have since been added — see Authentication above. Full
   OAuth flows and SAML remain out of scope.)
