@@ -26,7 +26,7 @@ src/mcp_ogc/
 ├── models.py        # LayerInfo — typed I/O (pydantic)
 ├── errors.py        # OGCError + agent-friendly wrapping of transport/service errors
 ├── auth.py          # per-host credentials from MCP_OGC_AUTH
-├── services.py      # open_wms / open_wfs — the one place owslib clients are built
+├── services.py      # open_wms / open_wfs + opt-in capabilities cache and retry/backoff
 ├── tools/
 │   ├── wms.py       # list_wms_layers, get_wms_map  — plain functions
 │   └── wfs.py       # query_wfs_features            — plain functions
@@ -79,6 +79,19 @@ The host is read with urllib3's parser, the one `requests` connects with, and mu
 owslib turns HTTP 400/401/403 into a `ServiceException` carrying only the response body, so the
 status code is not available. `wrap_connection_errors` therefore reports "the service rejected
 the request" and adds a hint: configure credentials for that host, or check the ones configured.
+
+## Caching and retries
+
+Both live in `services.py` and are off unless their environment variable is set, so the default
+behaviour is exactly v0.1's. The cache stores *parsed* owslib service objects, so a later
+`get_wms_map` on the same endpoint skips both the GetCapabilities request and the XML parse.
+Entries are keyed by service type, URL and a hash of `MCP_OGC_AUTH`, because different credentials
+can see different layers. Failures are never cached.
+
+Retries wrap whole owslib calls rather than the HTTP layer: owslib issues module-level
+`requests.request(...)` calls with no session we could mount a retry adapter on. Only transient
+failures are retried (connection errors, timeouts, 5xx). owslib reports 4xx as
+`ServiceException`, which is never retried.
 
 ## Deliberate v0.1.0 scope limits
 
