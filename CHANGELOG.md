@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
 ### Added
 
 - Authentication for protected endpoints (#3). Per-host credentials are read from the
@@ -38,6 +40,11 @@ All notable changes to this project are documented here. The format is based on
   entities unescaped), and a response that isn't GeoJSON gets a clear error instead of a JSON
   decode traceback.
 
+### Fixed
+
+- `mcp_ogc.__version__` reported 0.1.1 in the 0.2.0 release; it now reads the installed
+  package version, so it can't drift again.
+
 ### Security
 
 - Server error text is truncated *before* tags are stripped. A hostile or broken server body
@@ -47,7 +54,8 @@ All notable changes to this project are documented here. The format is based on
   a capabilities document that advertised a GetMap/GetFeature URL on another host (or a plain
   http variant of the same host) received the configured credentials. The host is now parsed
   with urllib3 (the parser `requests` connects with) and must agree with the stdlib parser, so
-  URLs such as `https://evil.test\@trusted.host/` no longer match `trusted.host`. Never released.
+  URLs such as `https://evil.test\@trusted.host/` no longer match `trusted.host`. The flaw never
+  shipped in a release.
 
 ## [0.2.0] - 2026-07-23
 

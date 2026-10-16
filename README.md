@@ -163,6 +163,7 @@ uv run ruff check  # lint
 
 ## Roadmap
 
-- **v0.2:** WFS attribute filtering (CQL), WMTS support, basic/OAuth auth for protected endpoints
-- **v0.3:** caching layer, retry/backoff
-- **v1.0:** broader OGC API client surface
+- ~~WFS attribute filtering, WMTS support, auth for protected endpoints, caching, retry/backoff~~
+  — shipped in v0.3.0
+- **Next:** OAuth client-credentials flow, WFS paging (`startindex`), OR/NOT filter groups
+- **v1.0:** broader OGC API client surface (OGC API – Features / Tiles)

@@ -1,3 +1,6 @@
-"""mcp-ogc — OGC WMS/WFS services as Model Context Protocol tools."""
+"""mcp-ogc — OGC WMS/WMTS/WFS services as Model Context Protocol tools."""
 
-__version__ = "0.1.1"
+from importlib.metadata import version
+
+# Read from the installed package metadata (pyproject.toml) so it can't drift.
+__version__ = version("mcp-ogc")
