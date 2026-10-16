@@ -451,6 +451,7 @@ dependencies = [
     { name = "mcp" },
     { name = "owslib" },
     { name = "pydantic" },
+    { name = "requests" },
 ]
 
 [package.dev-dependencies]
@@ -466,6 +467,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.2" },
     { name = "owslib", specifier = ">=0.31" },
     { name = "pydantic", specifier = ">=2" },
+    { name = "requests", specifier = ">=2.31" },
 ]
 
 [package.metadata.requires-dev]

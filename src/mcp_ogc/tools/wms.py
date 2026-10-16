@@ -5,10 +5,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 from __future__ import annotations
 
-from owslib.wms import WebMapService
-
 from mcp_ogc.errors import OGCError, wrap_connection_errors
 from mcp_ogc.models import LayerInfo
+from mcp_ogc.services import open_wms
 
 
 def list_wms_layers(wms_url: str) -> list[LayerInfo]:
@@ -26,7 +25,7 @@ def list_wms_layers(wms_url: str) -> list[LayerInfo]:
         OGCError: if the endpoint cannot be reached.
     """
     with wrap_connection_errors(wms_url):
-        wms = WebMapService(wms_url, version="1.3.0")
+        wms = open_wms(wms_url)
 
     layers: list[LayerInfo] = []
     for key in wms.contents:
@@ -96,7 +95,7 @@ def get_wms_map(
             layers the service advertises.
     """
     with wrap_connection_errors(wms_url):
-        wms = WebMapService(wms_url, version="1.3.0")
+        wms = open_wms(wms_url)
 
         if layer not in wms.contents:
             available = ", ".join(sorted(wms.contents)) or "(none advertised)"

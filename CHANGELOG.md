@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- Authentication for protected endpoints (#3). Per-host credentials are read from the
+  `MCP_OGC_AUTH` environment variable (JSON keyed by host or `host:port`): HTTP Basic
+  (`username` + `password`) or a Bearer `token`. Credentials are never tool arguments, are sent
+  only to their exact host, only over https unless `"allow_insecure_http": true`, and are never
+  logged or echoed in errors.
+- When a service rejects a request (HTTP 400/401/403), tools now raise an `OGCError` naming the
+  endpoint and hinting at `MCP_OGC_AUTH`, instead of a raw owslib `ServiceException`.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added
