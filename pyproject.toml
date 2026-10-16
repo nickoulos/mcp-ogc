@@ -1,7 +1,7 @@
 [project]
 name = "mcp-ogc"
-version = "0.2.0"
-description = "Expose OGC WMS and WFS geospatial services as Model Context Protocol tools."
+version = "0.3.0"
+description = "Expose OGC WMS, WMTS and WFS geospatial services as Model Context Protocol tools."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "AGPL-3.0-or-later" }
