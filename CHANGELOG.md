@@ -16,6 +16,14 @@ All notable changes to this project are documented here. The format is based on
 - When a service rejects a request (HTTP 400/401/403), tools now raise an `OGCError` naming the
   endpoint and hinting at `MCP_OGC_AUTH`, instead of a raw owslib `ServiceException`.
 
+### Security
+
+- Credentials are now bound to each outgoing request's host, not to the owslib client. Before,
+  a capabilities document that advertised a GetMap/GetFeature URL on another host (or a plain
+  http variant of the same host) received the configured credentials. The host is now parsed
+  with urllib3 (the parser `requests` connects with) and must agree with the stdlib parser, so
+  URLs such as `https://evil.test\@trusted.host/` no longer match `trusted.host`. Never released.
+
 ## [0.2.0] - 2026-07-23
 
 ### Added
