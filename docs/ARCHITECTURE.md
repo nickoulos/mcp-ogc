@@ -69,6 +69,13 @@ agent picks the URL, credentials are scoped to an exact host (or `host:port`) â€
 matched â€” so they can't be redirected to an attacker-controlled endpoint, and they are only sent
 over https unless an entry explicitly opts out.
 
+The check runs **per request**, inside a `requests` auth hook (`_HostBoundAuth`), not once per
+client. That matters because owslib sends GetMap/GetFeature to the URLs the capabilities document
+*advertises*, which can be a different host or an http variant of the same one. Basic credentials
+therefore go through the hook too (as an `auth_delegate`), never as owslib's `username`/`password`.
+The host is read with urllib3's parser, the one `requests` connects with, and must agree with
+`urllib.parse`; a URL the two read differently (e.g. `https://a\@b/`) gets no credentials.
+
 owslib turns HTTP 400/401/403 into a `ServiceException` carrying only the response body, so the
 status code is not available. `wrap_connection_errors` therefore reports "the service rejected
 the request" and adds a hint: configure credentials for that host, or check the ones configured.
