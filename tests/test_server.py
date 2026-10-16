@@ -12,7 +12,12 @@ import re
 import responses
 
 from mcp_ogc import server
-from tests.fixtures import PNG_1X1, WMTS_CAPABILITIES_100
+from tests.fixtures import (
+    PNG_1X1,
+    WFS_CAPABILITIES_200,
+    WFS_GEOJSON_RESPONSE,
+    WMTS_CAPABILITIES_100,
+)
 
 
 def test_main_default_uses_stdio(monkeypatch):
@@ -86,3 +91,28 @@ def test_get_wmts_tile_tool_returns_image_and_tile_location():
     assert content[1].type == "text"
     assert "row=1" in content[1].text
     assert "column=1" in content[1].text
+
+
+@responses.activate
+def test_query_wfs_features_tool_accepts_filters():
+    wfs_re = re.compile(r"^http://example\.test/wfs")
+    responses.add(
+        responses.GET, wfs_re, body=WFS_CAPABILITIES_200, content_type="text/xml", status=200,
+    )
+    responses.add(
+        responses.GET, wfs_re, body=WFS_GEOJSON_RESPONSE,
+        content_type="application/json", status=200,
+    )
+
+    asyncio.run(
+        server.mcp.call_tool(
+            "query_wfs_features",
+            {
+                "wfs_url": "http://example.test/wfs",
+                "type_name": "test:buildings",
+                "filters": [{"property": "type", "op": "=", "value": "school"}],
+            },
+        )
+    )
+
+    assert "FILTER=" in responses.calls[-1].request.url

@@ -10,7 +10,7 @@ import re
 import pytest
 import responses
 
-from mcp_ogc.errors import OGCError
+from mcp_ogc.errors import OGCError, service_text
 from mcp_ogc.tools.wfs import query_wfs_features
 from mcp_ogc.tools.wms import get_wms_map, list_wms_layers
 from tests.fixtures import WFS_CAPABILITIES_200, WMS_CAPABILITIES_130
@@ -64,3 +64,13 @@ def test_list_wms_layers_connection_error_is_wrapped():
 
     # A clear message mentioning the endpoint, not a raw requests traceback.
     assert WMS_URL in str(exc.value)
+
+
+def test_service_text_strips_tags_and_unescapes_entities():
+    # GeoServer double-escapes CQL parse errors inside its exception report.
+    body = (
+        "<ows:ExceptionText>Encountered &amp;quot; &amp;lt;EQ&amp;gt; &amp;quot;== "
+        "&amp;quot;&amp;quot; at line 1</ows:ExceptionText>"
+    )
+
+    assert service_text(body) == 'Encountered " <EQ> "== "" at line 1'

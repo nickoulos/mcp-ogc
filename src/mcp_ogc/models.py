@@ -6,8 +6,9 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class LayerInfo(BaseModel):
@@ -77,3 +78,29 @@ class WMTSTile:
     tile_matrix: str
     row: int
     column: int
+
+
+class AttributeFilter(BaseModel):
+    """One attribute condition for query_wfs_features; several are AND-ed.
+
+    Sent to the server as a standard OGC Filter Encoding 2.0 filter, so it works
+    on any WFS 2.0 server (GeoServer, MapServer, deegree, QGIS Server, ...).
+    """
+
+    property: str = Field(min_length=1, description="Attribute (property) name to test.")
+    op: Literal["=", "!=", "<", "<=", ">", ">=", "like", "is_null"] = Field(
+        default="=",
+        description=(
+            "Comparison operator. 'like' matches a pattern where % is any run of "
+            "characters and _ is one character; 'is_null' takes no value."
+        ),
+    )
+    value: str | int | float | bool | None = Field(
+        default=None, description="Value to compare against (omit for 'is_null')."
+    )
+
+    @model_validator(mode="after")
+    def _value_required(self) -> AttributeFilter:
+        if self.op != "is_null" and self.value is None:
+            raise ValueError(f"op {self.op!r} needs a value")
+        return self

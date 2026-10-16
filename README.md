@@ -20,7 +20,8 @@ Eneo assistants) can attach to. It exposes five tools:
   formats, styles and tile matrix sets (CRS + zoom levels).
 - **`get_wmts_tile(wmts_url, layer, tile_matrix_set, tile_matrix, ...)`** — fetch one tile, located
   by `row` + `column` or by a `point` in the tile grid's CRS (the tool finds the tile containing it).
-- **`query_wfs_features(wfs_url, type_name, bbox, ...)`** — query vector features as GeoJSON.
+- **`query_wfs_features(wfs_url, type_name, bbox, filters, cql_filter, ...)`** — query vector
+  features as GeoJSON, optionally filtered by attribute (see [Attribute filters](#attribute-filters)).
 
 This means an agent can ask *"what layers does this municipal map server have, and what's at this
 location?"* against any INSPIRE-compliant GIS service — without per-service custom integration.
@@ -86,6 +87,29 @@ uv run mcp-ogc --transport streamable-http --host 0.0.0.0 --port 8000
 
 DNS-rebinding protection is enabled on the HTTP transport, with an allowlist covering
 `127.0.0.1`, `localhost`, `[::1]`, and `host.docker.internal` (for clients running in Docker).
+
+### Attribute filters
+
+`query_wfs_features` can filter by attribute in two ways:
+
+- **`filters`** (recommended): a list of conditions, AND-ed together and sent as a standard OGC
+  Filter Encoding 2.0 filter, so it works on any WFS 2.0 server. It can be combined with `bbox`.
+
+  ```json
+  [{"property": "type", "op": "=", "value": "school"},
+   {"property": "floors", "op": ">", "value": 2}]
+  ```
+
+  Operators: `=`, `!=`, `<`, `<=`, `>`, `>=`, `like` (`%` = any run of characters, `_` = one
+  character) and `is_null`.
+- **`cql_filter`**: a raw CQL string such as `"type = 'school' AND floors > 2"`, sent as GeoServer's
+  `CQL_FILTER` vendor parameter. **GeoServer only:** other servers (e.g. MapServer) silently ignore
+  it and return *unfiltered* features. It can't be combined with `filters` or `bbox`; for a spatial
+  term use `BBOX(<geometry>, minx, miny, maxx, maxy, 'EPSG:<code>')` inside the CQL. Keep the
+  explicit CRS, or GeoServer reads the box in the layer's native axis order.
+
+If the server rejects a query, the tool returns its error message (e.g. *"Property 'nope' is
+unknown"*), so the agent can correct the query.
 
 ### Protected endpoints
 
