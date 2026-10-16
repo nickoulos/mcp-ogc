@@ -29,6 +29,7 @@ src/mcp_ogc/
 ├── services.py      # open_wms / open_wfs + opt-in capabilities cache and retry/backoff
 ├── tools/
 │   ├── wms.py       # list_wms_layers, get_wms_map  — plain functions
+│   ├── wmts.py      # list_wmts_layers, get_wmts_tile — plain functions
 │   └── wfs.py       # query_wfs_features            — plain functions
 └── server.py        # FastMCP wiring; registers the tools as MCP tools
 ```
@@ -79,6 +80,23 @@ The host is read with urllib3's parser, the one `requests` connects with, and mu
 owslib turns HTTP 400/401/403 into a `ServiceException` carrying only the response body, so the
 status code is not available. `wrap_connection_errors` therefore reports "the service rejected
 the request" and adds a hint: configure credentials for that host, or check the ones configured.
+
+## WMTS: point to tile
+
+`get_wmts_tile` accepts either a tile `row` + `column` or a `point`, because agents think in
+coordinates, not tile indices. The point is converted with the formula in OGC WMTS 1.0.0
+Annex H (`pixel_span = ScaleDenominator × 0.28 mm / metersPerUnit`). Two traps, both silent
+(they just return a different, valid-looking tile):
+
+- **Axis order.** `TopLeftCorner` is written in the CRS's own axis order, so it is northing-first
+  for EPSG:3006 and EPSG:4326. owslib parses it in document order without swapping. We swap it
+  when `owslib.crs.Crs(crs).axisorder == "yx"`. As with `get_wms_map`, callers always pass the
+  point easting-first.
+- **Units.** Degree-based CRS use `metersPerUnit = 2π × 6378137 / 360`; projected CRS are assumed
+  to be in metres.
+
+The core returns a `WMTSTile` (bytes + MIME type + resolved row/column). The MCP tool returns
+both the image and a text line with the location, so an agent can request neighbouring tiles.
 
 ## Caching and retries
 

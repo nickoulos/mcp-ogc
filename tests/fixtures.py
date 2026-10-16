@@ -78,6 +78,98 @@ WFS_CAPABILITIES_200 = """<?xml version="1.0" encoding="UTF-8"?>
 </wfs:WFS_Capabilities>
 """
 
+# A minimal WMTS 1.0.0 GetCapabilities document: one layer linked to three tile
+# matrix sets. TopLeftCorner follows each CRS's own axis order, as the WMTS spec
+# requires: EPSG:3006 and EPSG:4326 are northing-first, EPSG:3857 easting-first.
+WMTS_CAPABILITIES_100 = """<?xml version="1.0" encoding="UTF-8"?>
+<Capabilities version="1.0.0"
+    xmlns="http://www.opengis.net/wmts/1.0"
+    xmlns:ows="http://www.opengis.net/ows/1.1"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+  <ows:ServiceIdentification>
+    <ows:Title>Test WMTS</ows:Title>
+    <ows:ServiceType>OGC WMTS</ows:ServiceType>
+    <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+  </ows:ServiceIdentification>
+  <ows:OperationsMetadata>
+    <ows:Operation name="GetCapabilities">
+      <ows:DCP><ows:HTTP><ows:Get xlink:href="http://example.test/wmts?">
+        <ows:Constraint name="GetEncoding"><ows:AllowedValues>
+          <ows:Value>KVP</ows:Value>
+        </ows:AllowedValues></ows:Constraint>
+      </ows:Get></ows:HTTP></ows:DCP>
+    </ows:Operation>
+    <ows:Operation name="GetTile">
+      <ows:DCP><ows:HTTP><ows:Get xlink:href="http://example.test/wmts?">
+        <ows:Constraint name="GetEncoding"><ows:AllowedValues>
+          <ows:Value>KVP</ows:Value>
+        </ows:AllowedValues></ows:Constraint>
+      </ows:Get></ows:HTTP></ows:DCP>
+    </ows:Operation>
+  </ows:OperationsMetadata>
+  <Contents>
+    <Layer>
+      <ows:Title>Basemap</ows:Title>
+      <ows:Abstract>Test basemap.</ows:Abstract>
+      <ows:WGS84BoundingBox>
+        <ows:LowerCorner>10.0 50.0</ows:LowerCorner>
+        <ows:UpperCorner>11.0 51.0</ows:UpperCorner>
+      </ows:WGS84BoundingBox>
+      <ows:Identifier>test:basemap</ows:Identifier>
+      <Style isDefault="false"><ows:Identifier>night</ows:Identifier></Style>
+      <Style isDefault="true"><ows:Identifier>default</ows:Identifier></Style>
+      <Format>image/jpeg</Format>
+      <Format>image/png</Format>
+      <TileMatrixSetLink><TileMatrixSet>WebMercatorQuad</TileMatrixSet></TileMatrixSetLink>
+      <TileMatrixSetLink><TileMatrixSet>sweref99tm</TileMatrixSet></TileMatrixSetLink>
+      <TileMatrixSetLink><TileMatrixSet>wgs84</TileMatrixSet></TileMatrixSetLink>
+    </Layer>
+    <TileMatrixSet>
+      <ows:Identifier>WebMercatorQuad</ows:Identifier>
+      <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3857</ows:SupportedCRS>
+      <TileMatrix>
+        <ows:Identifier>0</ows:Identifier>
+        <ScaleDenominator>559082264.0287178</ScaleDenominator>
+        <TopLeftCorner>-20037508.3427892 20037508.3427892</TopLeftCorner>
+        <TileWidth>256</TileWidth><TileHeight>256</TileHeight>
+        <MatrixWidth>1</MatrixWidth><MatrixHeight>1</MatrixHeight>
+      </TileMatrix>
+      <TileMatrix>
+        <ows:Identifier>1</ows:Identifier>
+        <ScaleDenominator>279541132.0143589</ScaleDenominator>
+        <TopLeftCorner>-20037508.3427892 20037508.3427892</TopLeftCorner>
+        <TileWidth>256</TileWidth><TileHeight>256</TileHeight>
+        <MatrixWidth>2</MatrixWidth><MatrixHeight>2</MatrixHeight>
+      </TileMatrix>
+    </TileMatrixSet>
+    <TileMatrixSet>
+      <ows:Identifier>sweref99tm</ows:Identifier>
+      <ows:SupportedCRS>urn:ogc:def:crs:EPSG::3006</ows:SupportedCRS>
+      <TileMatrix>
+        <ows:Identifier>0</ows:Identifier>
+        <!-- 4096 m per pixel: 4096 / 0.00028 -->
+        <ScaleDenominator>14628571.428571429</ScaleDenominator>
+        <TopLeftCorner>8500000 -1200000</TopLeftCorner>
+        <TileWidth>256</TileWidth><TileHeight>256</TileHeight>
+        <MatrixWidth>5</MatrixWidth><MatrixHeight>4</MatrixHeight>
+      </TileMatrix>
+    </TileMatrixSet>
+    <TileMatrixSet>
+      <ows:Identifier>wgs84</ows:Identifier>
+      <ows:SupportedCRS>urn:ogc:def:crs:EPSG::4326</ows:SupportedCRS>
+      <TileMatrix>
+        <ows:Identifier>0</ows:Identifier>
+        <!-- 0.703125 degrees per pixel, so one 256 px tile spans 180 degrees -->
+        <ScaleDenominator>279541132.0143589</ScaleDenominator>
+        <TopLeftCorner>90 -180</TopLeftCorner>
+        <TileWidth>256</TileWidth><TileHeight>256</TileHeight>
+        <MatrixWidth>2</MatrixWidth><MatrixHeight>1</MatrixHeight>
+      </TileMatrix>
+    </TileMatrixSet>
+  </Contents>
+</Capabilities>
+"""
+
 # A tiny GeoJSON FeatureCollection the WFS GetFeature mock returns.
 WFS_GEOJSON_RESPONSE = """{
   "type": "FeatureCollection",
