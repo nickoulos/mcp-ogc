@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- `skills/mcp-ogc/SKILL.md`, an Agent Skill that tells an agent when and how to use the WMS,
+  WMTS and WFS tools: choosing a CRS, the easting-first bbox/point contract, WFS feature-type
+  discovery, the WFS default-CRS bbox, WFS attribute filters vs `cql_filter`, WMTS tile
+  panning, and a diagnosis order for blank images and empty results.
+
 ## [0.3.0] - 2026-10-16
 
 ### Added

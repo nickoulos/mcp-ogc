@@ -149,6 +149,15 @@ Both are opt-in, via environment variables, so the default stays simple (no cach
 The cache holds at most 64 endpoints (least recently used evicted) and is keyed by endpoint and
 auth configuration, so different credentials never share an entry.
 
+## Agent skill
+
+[`skills/mcp-ogc/SKILL.md`](skills/mcp-ogc/SKILL.md) is an [Agent Skill](https://agentskills.io)
+that teaches an agent *when* and *how* to use the tools: picking a CRS from `crs_options`, the
+easting-first bbox rule (owslib handles the axis swap for EPSG:3006/4326, so never pre-swap),
+discovering WFS feature type names, locating and panning WMTS tiles, and diagnosing blank maps
+or empty results. To use it with
+Claude Code, copy the folder into `~/.claude/skills/` (or your project's `.claude/skills/`).
+
 ## Development
 
 ```bash
