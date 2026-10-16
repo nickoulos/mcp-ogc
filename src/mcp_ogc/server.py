@@ -13,10 +13,12 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP, Image
 from mcp.server.transport_security import TransportSecuritySettings
 
-from mcp_ogc.models import LayerInfo
+from mcp_ogc.models import LayerInfo, WMTSLayerInfo
 from mcp_ogc.tools.wfs import query_wfs_features as _query_wfs_features
 from mcp_ogc.tools.wms import get_wms_map as _get_wms_map
 from mcp_ogc.tools.wms import list_wms_layers as _list_wms_layers
+from mcp_ogc.tools.wmts import get_wmts_tile as _get_wmts_tile
+from mcp_ogc.tools.wmts import list_wmts_layers as _list_wmts_layers
 
 # Streamable-HTTP clients (e.g. Eneo) may run in Docker and reach this server
 # via host.docker.internal; FastMCP's default DNS-rebinding allowlist is
@@ -115,6 +117,72 @@ def query_wfs_features(
         bbox=bbox,
         max_features=max_features,
     )
+
+
+
+@mcp.tool()
+def list_wmts_layers(wmts_url: str) -> list[WMTSLayerInfo]:
+    """Discover the layers a WMTS (tiled map) endpoint exposes.
+
+    Args:
+        wmts_url: Base URL of the WMTS service.
+
+    Returns:
+        One WMTSLayerInfo per layer: formats, styles, and the tile matrix sets
+        (CRS + zoom-level identifiers) it can be requested in.
+    """
+    return _list_wmts_layers(wmts_url)
+
+
+@mcp.tool(structured_output=False)
+def get_wmts_tile(
+    wmts_url: str,
+    layer: str,
+    tile_matrix_set: str,
+    tile_matrix: str,
+    row: int | None = None,
+    column: int | None = None,
+    point: tuple[float, float] | None = None,
+    style: str | None = None,
+    image_format: str | None = None,
+) -> list[Image | str]:
+    """Fetch one map tile from a WMTS endpoint.
+
+    Locate the tile by row + column, or by point (the tile containing it).
+
+    Args:
+        wmts_url: Base URL of the WMTS service.
+        layer: Layer identifier (from list_wmts_layers).
+        tile_matrix_set: Tile matrix set linked to the layer (from list_wmts_layers).
+        tile_matrix: Zoom level identifier within the tile matrix set.
+        row: Tile row, 0 at the top.
+        column: Tile column, 0 at the left.
+        point: (x, y) in the tile matrix set's CRS, always easting-first
+            (lon/lat for degree-based CRS), even for EPSG:3006 / EPSG:4326.
+        style: Style identifier; defaults to the layer's default style.
+        image_format: MIME type; defaults to image/png when offered.
+
+    Returns:
+        The tile image, plus a line giving its tile matrix, row and column so
+        neighbouring tiles can be requested.
+    """
+    tile = _get_wmts_tile(
+        wmts_url=wmts_url,
+        layer=layer,
+        tile_matrix_set=tile_matrix_set,
+        tile_matrix=tile_matrix,
+        row=row,
+        column=column,
+        point=point,
+        style=style,
+        image_format=image_format,
+    )
+    subtype = tile.mime_type.split(";")[0].split("/")[-1].strip()
+    return [
+        Image(data=tile.data, format=subtype),
+        f"tile_matrix_set={tile.tile_matrix_set} tile_matrix={tile.tile_matrix} "
+        f"row={tile.row} column={tile.column}",
+    ]
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -21,6 +21,13 @@ All notable changes to this project are documented here. The format is based on
   exponential backoff, for both capabilities and data requests; 4xx is never retried. Both are
   off by default.
 
+- WMTS support (#2). `list_wmts_layers` lists layers with their formats, styles and tile matrix
+  sets; `get_wmts_tile` fetches one tile by `row` + `column`, or by a `point` in the tile matrix
+  set's CRS (always easting-first). Converting a point uses the OGC WMTS formula, swaps the
+  TopLeftCorner for northing-first CRS such as EPSG:3006 and EPSG:4326, and handles degree-based
+  CRS. The tool returns the tile image plus its resolved row/column. Verified live against
+  TopPlusOpen (EPSG:3857 and EPSG:25832).
+
 ### Security
 
 - Credentials are now bound to each outgoing request's host, not to the owslib client. Before,

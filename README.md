@@ -4,18 +4,22 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 
-Expose OGC **WMS** and **WFS** geospatial services as [Model Context Protocol](https://modelcontextprotocol.io)
+Expose OGC **WMS**, **WMTS** and **WFS** geospatial services as [Model Context Protocol](https://modelcontextprotocol.io)
 tools, so LLM agents can discover layers, render maps, and query vector features from any
 standards-compliant geodata server.
 
 ## What it does
 
 `mcp-ogc` runs as an MCP server that any MCP-compatible client (Claude Desktop, custom agents,
-Eneo assistants) can attach to. It exposes three tools:
+Eneo assistants) can attach to. It exposes five tools:
 
 - **`list_wms_layers(wms_url)`** — discover what layers a WMS endpoint exposes (name, title,
   abstract, supported CRS, bounding box).
 - **`get_wms_map(wms_url, layer, bbox, ...)`** — fetch a rendered map image for a bounding box.
+- **`list_wmts_layers(wmts_url)`** — discover the layers of a tiled (WMTS) map service, with their
+  formats, styles and tile matrix sets (CRS + zoom levels).
+- **`get_wmts_tile(wmts_url, layer, tile_matrix_set, tile_matrix, ...)`** — fetch one tile, located
+  by `row` + `column` or by a `point` in the tile grid's CRS (the tool finds the tile containing it).
 - **`query_wfs_features(wfs_url, type_name, bbox, ...)`** — query vector features as GeoJSON.
 
 This means an agent can ask *"what layers does this municipal map server have, and what's at this
@@ -36,8 +40,10 @@ flowchart LR
     LLM[LLM Agent<br/>Claude / GPT / Eneo] -->|MCP protocol| Server[mcp-ogc server]
     Server -->|list_wms_layers| WMS[WMS endpoint]
     Server -->|get_wms_map| WMS
+    Server -->|list_wmts_layers / get_wmts_tile| WMTS[WMTS endpoint]
     Server -->|query_wfs_features| WFS[WFS endpoint]
     WMS -.->|XML capabilities, PNG images| Server
+    WMTS -.->|XML capabilities, PNG/JPEG tiles| Server
     WFS -.->|GeoJSON features| Server
     Server -.->|structured tool output| LLM
 ```

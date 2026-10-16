@@ -28,6 +28,7 @@ from typing import Any
 import requests
 from owslib.wfs import WebFeatureService
 from owslib.wms import WebMapService
+from owslib.wmts import WebMapTileService
 
 from mcp_ogc.auth import AUTH_ENV_VAR, auth_for_url
 from mcp_ogc.errors import OGCError
@@ -130,4 +131,11 @@ def open_wfs(url: str):
     """Fetch and parse a WFS 2.0.0 GetCapabilities document."""
     return _capabilities(
         "wfs", url, lambda: WebFeatureService(url, version="2.0.0", auth=auth_for_url(url))
+    )
+
+
+def open_wmts(url: str):
+    """Fetch and parse a WMTS 1.0.0 GetCapabilities document."""
+    return _capabilities(
+        "wmts", url, lambda: WebMapTileService(url, version="1.0.0", auth=auth_for_url(url))
     )
