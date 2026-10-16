@@ -8,9 +8,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from owslib.wfs import WebFeatureService
-
 from mcp_ogc.errors import OGCError, wrap_connection_errors
+from mcp_ogc.services import open_wfs
 
 
 def query_wfs_features(
@@ -41,7 +40,7 @@ def query_wfs_features(
         v0.1.0; see the roadmap. Only spatial (bbox) filtering is supported here.
     """
     with wrap_connection_errors(wfs_url):
-        wfs = WebFeatureService(wfs_url, version="2.0.0")
+        wfs = open_wfs(wfs_url)
 
         if type_name not in wfs.contents:
             available = ", ".join(sorted(wfs.contents)) or "(none advertised)"

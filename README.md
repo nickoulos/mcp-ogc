@@ -81,6 +81,31 @@ uv run mcp-ogc --transport streamable-http --host 0.0.0.0 --port 8000
 DNS-rebinding protection is enabled on the HTTP transport, with an allowlist covering
 `127.0.0.1`, `localhost`, `[::1]`, and `host.docker.internal` (for clients running in Docker).
 
+### Protected endpoints
+
+Credentials are configured per host in the `MCP_OGC_AUTH` environment variable, never passed as
+tool arguments, so the LLM never sees them. HTTP Basic (`username` + `password`) and Bearer tokens
+(`token`) are supported:
+
+```json
+{
+  "mcpServers": {
+    "ogc": {
+      "command": "mcp-ogc",
+      "env": {
+        "MCP_OGC_AUTH": "{\"karta.example.se\": {\"username\": \"alice\", \"password\": \"...\"}, \"tiles.example.se\": {\"token\": \"...\"}}"
+      }
+    }
+  }
+}
+```
+
+- Each entry is sent **only** to its own host (keys may include a port, e.g. `host:8443`), so an
+  agent cannot leak credentials by pointing a tool at another URL.
+- Credentials are only sent over **https**; add `"allow_insecure_http": true` to an entry to
+  override that for a trusted internal endpoint.
+- Credentials are never logged, persisted, or echoed in error messages.
+
 ## Development
 
 ```bash

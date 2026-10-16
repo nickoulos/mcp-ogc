@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from urllib.parse import urlsplit
 
 
 class OGCError(Exception):
@@ -35,6 +36,10 @@ def wrap_connection_errors(url: str) -> Iterator[None]:
         raise
     except Exception as exc:  # noqa: BLE001 — deliberately broad: any transport failure
         name = type(exc).__name__
+        # owslib has several unrelated ServiceException classes (util, wfs200,
+        # wmts); openURL raises one for HTTP 400/401/403 with only the body.
+        if name == "ServiceException":
+            raise OGCError(_rejected_message(url, exc)) from exc
         if any(
             hint in name
             for hint in ("Connection", "Timeout", "URLError", "HTTPError", "SSLError")
@@ -43,4 +48,23 @@ def wrap_connection_errors(url: str) -> Iterator[None]:
                 f"Could not reach the OGC service at {url}: {exc}"
             ) from exc
         raise
+
+
+def _rejected_message(url: str, exc: Exception) -> str:
+    # Imported here: mcp_ogc.auth imports this module.
+    from mcp_ogc.auth import AUTH_ENV_VAR, auth_for_url
+
+    detail = " ".join(str(exc).split())[:300] or "(no details)"
+    host = urlsplit(url).hostname or url
+    try:
+        has_credentials = auth_for_url(url) is not None
+    except OGCError:
+        has_credentials = True
+    hint = (
+        f"check the credentials configured for host {host!r} in {AUTH_ENV_VAR}"
+        if has_credentials
+        else f"if this endpoint requires authentication, configure credentials for "
+        f"host {host!r} in {AUTH_ENV_VAR}"
+    )
+    return f"The OGC service at {url} rejected the request: {detail} ({hint})."
 

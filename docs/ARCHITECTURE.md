@@ -24,6 +24,9 @@ The codebase separates the geospatial logic from the protocol plumbing:
 ```
 src/mcp_ogc/
 ├── models.py        # LayerInfo — typed I/O (pydantic)
+├── errors.py        # OGCError + agent-friendly wrapping of transport/service errors
+├── auth.py          # per-host credentials from MCP_OGC_AUTH
+├── services.py      # open_wms / open_wfs — the one place owslib clients are built
 ├── tools/
 │   ├── wms.py       # list_wms_layers, get_wms_map  — plain functions
 │   └── wfs.py       # query_wfs_features            — plain functions
@@ -57,6 +60,19 @@ by `test_get_wms_map_epsg3006_sends_bbox_northing_first`, which asserts the on-w
 and was verified live against `karta.sundsvall.se` (correct order: 365 KB ortofoto PNG;
 wrong order: 5.6 KB near-blank PNG, both HTTP 200).
 
+## Authentication
+
+Credentials live in the `MCP_OGC_AUTH` environment variable as a JSON object keyed by host, and
+`services.py` attaches the matching entry when it builds an owslib client. They are deliberately
+**not** tool arguments: anything in a tool call is visible to (and chosen by) the LLM. Because the
+agent picks the URL, credentials are scoped to an exact host (or `host:port`) — never substring
+matched — so they can't be redirected to an attacker-controlled endpoint, and they are only sent
+over https unless an entry explicitly opts out.
+
+owslib turns HTTP 400/401/403 into a `ServiceException` carrying only the response body, so the
+status code is not available. `wrap_connection_errors` therefore reports "the service rejected
+the request" and adds a hint: configure credentials for that host, or check the ones configured.
+
 ## Deliberate v0.1.0 scope limits
 
 Small and sharp beats big and half-broken. Intentionally **out** of v0.1.0:
@@ -65,6 +81,8 @@ Small and sharp beats big and half-broken. Intentionally **out** of v0.1.0:
   XML filter). Supporting CQL well would mean fragile, vendor-specific request building, so
   v0.1.0 supports **spatial (bbox) filtering only**; CQL is a v0.2 roadmap item.
 - **WMTS, WPS, OAuth/SAML auth, caching, retries, exotic CRS reprojection.** All deferred.
+  (HTTP Basic and static Bearer tokens have since been added — see Authentication above. Full
+  OAuth flows and SAML remain out of scope.)
 
 ## Testing strategy
 
